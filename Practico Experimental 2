@@ -1,0 +1,123 @@
+using System;
+using System.Collections.Generic;
+
+namespace SistemaParque
+{
+    // Clase que representa a un visitante (Objeto)
+    class Persona
+    {
+        public string Nombre { get; set; }
+        public int AsientoAsignado { get; set; }
+
+        public Persona(string nombre)
+        {
+            Nombre = nombre;
+            AsientoAsignado = -1; // -1 significa que está en espera
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // Estructura de Datos Lineal: Cola (FIFO) para el orden de llegada
+            Queue<Persona> colaEspera = new Queue<Persona>();
+            
+            // Lista para registrar a los que ya tienen asiento asignado
+            List<Persona> asientosAsignados = new List<Persona>();
+            
+            const int MAX_ASIENTOS = 30;
+            int contadorAsientos = 1;
+            int opcion = 0;
+
+            do
+            {
+                Console.Clear();
+                Console.WriteLine("==================================================");
+                Console.WriteLine("    SISTEMA DE ASIGNACIÓN DE ASIENTOS - COLA FIFO ");
+                Console.WriteLine("==================================================");
+                Console.WriteLine($" Asientos ocupados: {asientosAsignados.Count} / {MAX_ASIENTOS}");
+                Console.WriteLine($" Personas actualmente en cola de espera: {colaEspera.Count}");
+                Console.WriteLine("--------------------------------------------------");
+                Console.WriteLine(" 1. Registrar persona en la cola de llegada");
+                Console.WriteLine(" 2. Asignar asiento al siguiente en la cola (FIFO)");
+                Console.WriteLine(" 3. Ver reporte actual de asignación");
+                Console.WriteLine(" 4. Salir del sistema");
+                Console.WriteLine("==================================================");
+                Console.Write(" Seleccione una opción: ");
+                
+                if (!int.TryParse(Console.ReadLine(), out opcion)) continue;
+
+                switch (opcion)
+                {
+                    case 1:
+                        Console.Write("\n Ingrese el nombre del visitante: ");
+                        string nombre = Console.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(nombre))
+                        {
+                            Persona nuevaPersona = new Persona(nombre);
+                            colaEspera.Enqueue(nuevaPersona); // Encolar (Insertar al final)
+                            Console.WriteLine($" -> {nombre} ha sido agregado a la cola de espera.");
+                        }
+                        else
+                        {
+                            Console.WriteLine(" Nombre no válido.");
+                        }
+                        Console.ReadKey();
+                        break;
+
+                    case 2:
+                        if (asientosAsignados.Count >= MAX_ASIENTOS)
+                        {
+                            Console.WriteLine("\n [ERROR] Todos los 30 asientos del juego ya están asignados.");
+                        }
+                        else if (colaEspera.Count == 0)
+                        {
+                            Console.WriteLine("\n [AVISO] No hay nadie en la cola de espera para asignar asiento.");
+                        }
+                        else
+                        {
+                            // Desencolar (Primero en llegar, primero en ser atendido)
+                            Persona siguientePersona = colaEspera.Dequeue();
+                            siguientePersona.AsientoAsignado = contadorAsientos;
+                            asientosAsignados.Add(siguientePersona);
+                            
+                            Console.WriteLine($"\n [ÉXITO] Asiento #{contadorAsientos} asignado a: {siguientePersona.Nombre}");
+                            contadorAsientos++;
+                        }
+                        Console.ReadKey();
+                        break;
+
+                    case 3:
+                        Console.WriteLine("\n==================================================");
+                        Console.WriteLine("          REPORTE DE CONTROL DE OCUPACIÓN          ");
+                        Console.WriteLine("==================================================");
+                        if (asientosAsignados.Count == 0)
+                        {
+                            Console.WriteLine(" No hay asientos asignados todavía.");
+                        }
+                        else
+                        {
+                            foreach (var p in asientosAsignados)
+                            {
+                                Console.WriteLine($" * Asiento #{p.AsientoAsignado:00} -> Visitante: {p.Nombre}");
+                            }
+                        }
+                        Console.WriteLine("==================================================");
+                        Console.ReadKey();
+                        break;
+
+                    case 4:
+                        Console.WriteLine("\n Saliendo del sistema...");
+                        break;
+
+                    default:
+                        Console.WriteLine("\n Opción inválida.");
+                        Console.ReadKey();
+                        break;
+                }
+
+            } while (opcion != 4);
+        }
+    }
+}
