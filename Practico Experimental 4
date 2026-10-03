@@ -1,1 +1,116 @@
+import time
 
+class GrafoVuelos:
+    def __init__(self):
+        # Lista de adyacencia: {origen: {destino: precio}}
+        self.grafo = {}
+
+    def agregar_vuelo(self, origen, destino, precio):
+        if origen not in self.grafo:
+            self.grafo[origen] = {}
+        if destino not in self.grafo:
+            self.grafo[destino] = {}
+        self.grafo[origen][destino] = precio
+
+    def mostrar_reporteria(self):
+        print("\n" + "="*50)
+        print("         REPORTERÍA DE RUTAS Y VUELOS DISPONIBLES")
+        print("="*50)
+        for origen, destinos in self.grafo.items():
+            if destinos:
+                rutas = ", ".join([f"{dest} (${precio})" for dest, precio in destinos.items()])
+                print(f"Desde [{origen}]: -> {rutas}")
+            else:
+                print(f"Desde [{origen}]: Sin vuelos salientes")
+        print("="*50)
+
+    def dijkstra_vuelo_mas_barato(self, origen, destino):
+        if origen not in self.grafo or destino not in self.grafo:
+            return None, float('inf'), 0
+
+        inicio_tiempo = time.perf_counter()
+
+        distancias = {nodo: float('inf') for nodo in self.grafo}
+        distancias[origen] = 0
+        predecesores = {nodo: None for nodo in self.grafo}
+        no_visitados = list(self.grafo.keys())
+
+        while no_visitados:
+            # Seleccionar el nodo con la distancia mínima
+            nodo_actual = min(no_visitados, key=lambda nodo: distancias[nodo])
+
+            if distancias[nodo_actual] == float('inf'):
+                break
+
+            if nodo_actual == destino:
+                break
+
+            no_visitados.remove(nodo_actual)
+
+            for vecino, precio in self.grafo[nodo_actual].items():
+                if vecino in no_visitados:
+                    nueva_distancia = distancias[nodo_actual] + precio
+                    if nueva_distancia < distancias[vecino]:
+                        distancias[vecino] = nueva_distancia
+                        predecesores[vecino] = nodo_actual
+
+        # Reconstruir la ruta óptima
+        ruta = []
+        paso_actual = destino
+        while paso_actual is not None:
+            ruta.insert(0, paso_actual)
+            paso_actual = predecesores[paso_actual]
+
+        fin_tiempo = time.perf_counter()
+        tiempo_ejecucion = (fin_tiempo - inicio_tiempo) * 1000 # en ms
+
+        if distancias[destino] == float('inf'):
+            return None, float('inf'), tiempo_ejecucion
+
+        return ruta, distancias[destino], tiempo_ejecucion
+
+# --- Cargar datos simulados ---
+def cargar_datos_vuelos():
+    sistema = GrafoVuelos()
+    vuelos = [
+        ("Quito", "Guayaquil", 50),
+        ("Quito", "Cuenca", 70),
+        ("Guayaquil", "Galápagos", 120),
+        ("Cuenca", "Galápagos", 90),
+        ("Quito", "Manta", 40),
+        ("Manta", "Guayaquil", 30),
+        ("Guayaquil", "Bogotá", 200),
+        ("Galápagos", "Bogotá", 310)
+    ]
+    for orig, dest, prec in vuelos:
+        sistema.agregar_vuelo(orig, dest, prec)
+    return sistema
+
+if __name__ == "__main__":
+    sistema = cargar_datos_vuelos()
+    
+    while True:
+        print("\n--- SISTEMA BÚSQUEDA DE VUELOS BARATOS ---")
+        print("1. Mostrar reportería del grafo de vuelos")
+        print("2. Buscar vuelo más barato")
+        print("3. Salir")
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "1":
+            sistema.mostrar_reporteria()
+        elif opcion == "2":
+            orig = input("Ciudad de origen: ").strip()
+            dest = input("Ciudad de destino: ").strip()
+            ruta, costo, t_ejec = sistema.dijkstra_vuelo_mas_barato(orig, dest)
+            
+            print("\n--- RESULTADO DE LA BÚSQUEDA ---")
+            if ruta:
+                print(f"Ruta óptima encontrada: {' -> '.join(ruta)}")
+                print(f"Costo total mínimo: ${costo}")
+            else:
+                print(f"No existe una ruta disponible entre {orig} y {dest}.")
+            print(f"Tiempo de ejecución del algoritmo: {t_ejec:.4f} ms")
+        elif opcion == "3":
+            break
+        else:
+            print("Opción inválida.")
